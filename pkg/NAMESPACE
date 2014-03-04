@@ -1,0 +1,23 @@
+import(methods)
+import(stats)
+import(parallel)
+
+import(MASS)
+import(mgcv)
+
+export(LD, lethal.dose,
+       get_x,
+       confint)
+
+S3method(lethal.dose, default)
+S3method(LD, default)
+S3method(lethal.dose, LD)
+S3method(LD, LD)
+S3method(lethal.dose, LDpred)
+S3method(LD, LDpred)
+S3method(print, LD)
+S3method(summary, LD)
+S3method(predict, LD)
+S3method(confint, LD)
+S3method(lethal.dose, LD)
+S3method(get_x, default)
