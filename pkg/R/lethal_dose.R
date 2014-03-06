@@ -4,7 +4,7 @@
 LD <- lethal.dose <- function(...)
     UseMethod("LD")
 
-LD.default <- function(formula, groups = NULL, experiment = NULL,
+LD.formula <- function(formula, groups = NULL, experiment = NULL,
                lethal.dose = c(50, 10),
                dose_trafo = c("sqrt", "log", "none"),
                data, family = negbin(theta = c(0.01, 1000)), ...) {
@@ -63,25 +63,45 @@ LD.default <- function(formula, groups = NULL, experiment = NULL,
     return(RET)
 }
 
-LD.LD <- function(object, lethal.dose = c(50, 10), group = NULL, ...) {
-    cll <- match.call()
-    if (is.null(cll[["lethal.dose"]]))
-        return(object$lethal.dose)
+LD.LD <- function(object, lethal.dose = NULL, group = NULL, ...) {
+    if (is.null(lethal.dose) ||
+        (!is.null(attr(object$lethal.dose, "values")) &&
+         attr(object$lethal.dose, "values") == lethal.dose)) {
+
+        RET <- object$lethal.dose
+        if (!is.null(group)) {
+            if (is.list(RET)) {
+                RET <- lapply(RET, function(x, group) x[group, , drop = FALSE],
+                              group = group)
+            } else {
+                RET <- RET[group, , drop = FALSE]
+            }
+        }
+        return(RET)
+    }
 
     pr <- predict(object, group)
     RET <- LD(pr, dose = get_x(pr), lethal.dose = lethal.dose, ...)
     return(RET)
 }
 
-LD.LDpred <- function(pred, dose = NULL,
-                                            lethal.dose = c(50, 10), ...) {
+LD.LDpred <- function(pred, dose = NULL, lethal.dose = c(50, 10), ...) {
     ## pred can be a vector or a matrix of predictions
-    if (is.null(dose))
+    if (is.null(dose)) {
+        warning("get_x needs to be fixed")
         dose <- get_x(pred)
+    }
+
+    ## make sure pred is a matrix
+    if (!is.matrix(pred))
+        pred <- matrix(pred, ncol = 1)
 
     LD <- matrix(NA, nrow = ncol(pred), ncol = 2)
     colnames(LD) <- c("dose", "predicted count")
-    rownames(LD) <- paste0("group:", colnames(pred))
+    if (class(pred) == "LDpred")
+        rownames(LD) <- paste0("group:", colnames(pred))
+    if (!is.null(colnames(pred)))
+        rownames(LD) <- colnames(pred)
     if (length(lethal.dose) > 1) {
         LD <- lapply(1:length(lethal.dose), function(i) LD)
         names(LD) <- paste("LD", lethal.dose, sep = "")
@@ -105,7 +125,12 @@ LD.LDpred <- function(pred, dose = NULL,
     return(LD)
 }
 
-lethal.dose.default <- lethal.dose.LD <- lethal.dose.LDpred <- function(...)
+LD.matrix <- function(pred, dose, lethal.dose = c(50, 10), ...) {
+    LD <- LD.LDpred(pred = pred, dose = dose, lethal.dose = lethal.dose, ...)
+    return(LD)
+}
+
+lethal.dose.formula <- lethal.dose.matrix <- lethal.dose.LD <- lethal.dose.LDpred <- function(...)
     LD(...)
 
 
@@ -126,8 +151,12 @@ predict.LD <- function(object, group = NULL,
 
     if (!is.null(newdata)) {
         pr <- predict(object$model, newdata = newdata, type = type, ...)
+        attr(pr, "newdata") <- newdata
+        class(pr) <- "LDpred"
         return(pr)
     }
+
+    ## if no new data is given:
 
     if (is.null(group) && !is.null(variables$groups)) {
         ## make new data set for each group:
@@ -143,6 +172,9 @@ predict.LD <- function(object, group = NULL,
         ## average over experiments (if available)
         if (!is.null(variables$experiment))
             pr <- tapply(pr, newdata[, variables$dose], mean)
+        pr <- matrix(pr, ncol = 1)
+        if (!is.null(group))
+            colnames(pr) <- levels(object$data[, variables$groups])[group]
     } else {
         pr <- sapply(newdata, predict, object = object$model, type = type, ...)
         ## average over experiments (if available)
@@ -169,7 +201,7 @@ predict.LD <- function(object, group = NULL,
 confint <- function(object, level, ...)
     UseMethod("confint")
 
-confint.LD <- function(object, level = 0.95, lethal.dose = c(50, 10),
+confint.LD <- function(object, level = 0.95, lethal.dose = NULL,
                        outcome = "value", dose = "time", B1 = 20, B2 = 100,
                        newdata1 = NULL, newdata2 = NULL,
                        myapply = mclapply, ...) {
@@ -178,11 +210,41 @@ confint.LD <- function(object, level = 0.95, lethal.dose = c(50, 10),
     fm <- object$model$formula
     responsefct <- object$model$family$linkinv
 
+    if (is.null(lethal.dose))
+        lethal.dose <- attr(object$lethal.dose, "values")
+
     ## <FIXME> What about experiments with more than two groups?
-    if (is.null(newdata1))
-        newdata1 <- make_newdata(object, group = 1)
-    if (is.null(newdata2))
-        newdata2 <- make_newdata(object, group = 2)
+    if (!is.null(object$variables$groups)) {
+        if (is.null(newdata1) && is.null(newdata2)) {
+            newdata1 <- make_newdata(object, group = 1)
+            LD1.pe <- LD(object, lethal.dose = lethal.dose, group = 1)
+            newdata2 <- make_newdata(object, group = 2)
+            LD2.pe <- LD(object, lethal.dose = lethal.dose, group = 2)
+        } else {
+            if (!is.null(newdata1)) {
+                pred <- predict(object, newdata = newdata1)
+                LD1.pe <- LD(pred, lethal.dose = lethal.dose,
+                             dose = newdata1[, dose])
+            }
+            if (!is.null(newdata2)) {
+                pred <- predict(object, newdata = newdata2)
+                LD2.pe <- LD(pred, lethal.dose = lethal.dose,
+                             dose = newdata2[, dose])
+            }
+        }
+        if (!is.null(LD2.pe) && !is.null(LD2.pe)) {
+            LD_diff.pe <- ld.diff(LD1.pe, LD2.pe)
+        }
+    } else {
+        if (is.null(newdata1)) {
+            newdata1 <- make_newdata(object, group = 1)
+            LD1.pe <- LD(object, group = 1)
+        } else {
+            pred <- predict(object, newdata = newdata1)
+            LD1.pe <- LD(pred, lethal.dose = lethal.dose,
+                         dose = newdata1[, dose])
+        }
+    }
 
     probs <- c((1 - level)/2, 1 - (1 - level)/2)
 
@@ -190,7 +252,7 @@ confint.LD <- function(object, level = 0.95, lethal.dose = c(50, 10),
     ## normal distribution they are assumed to follow as they are REML
     ## estimates)
     if (B2 > 0)
-        rbeta <- rbind(mvrnorm(n = B2, mu = coef(object$model),
+        rbeta <- rbind(mvrnorm(n = B2, mu = coef(object),
                                Sigma = vcov(object$model)))
     else
         rbeta <- coef(object$model)
@@ -237,31 +299,21 @@ confint.LD <- function(object, level = 0.95, lethal.dose = c(50, 10),
         rbeta <- rbind(rbeta, do.call(rbind, res))
     }
 
-    compute_CIs <- function(pred, probs, newdata) {
+    compute_CIs <- function(pred, probs, newdata, lethal.dose) {
 
-
-#####
-###        LD <- matrix(NA, nrow = ncol(pred), ncol = 2)
-###        if (length(lethal.dose) > 1) {
-###            LD <- list(LD, LD)
-###            names(LD) <- paste("LD", lethal.dose, sep = "")
-###        }
-###         for (val in lethal.dose) {
-###           j <- paste("LD", val, sep = "")
-###           for (i in 1:ncol(pred))
-###               LD[[j]][i, ] <- compute_LD(pred[, i], ld_val = val,
-###                                        dose = newdata[, dose])
-###         }
-###
-#####
-
+        LD <- LD(pred, dose = newdata[, dose], lethal.dose = lethal.dose)
         if (is.list(LD)) {
-            CI_LD <- sapply(LD, function(x)
-                            quantile(x[,1], probs = probs))
+            CI_LD <- lapply(LD, function(x) {
+                            mat <- matrix(quantile(x[,1], probs = probs),
+                                          nrow = 1)
+                            colnames(mat) <- names(quantile(x[,1], probs = probs))
+                            return(mat)
+                        })
         } else {
-            CI_LD <- quantile(LD[,1], probs = probs)
+            CI_LD <- matrix(quantile(LD[,1], probs = probs), nrow = 1)
+            colnames(CI_LD) <- names(quantile(LD[,1], probs = probs))
         }
-        return(list(LD = LD, CI_LD = CI_LD))
+        return(list(ci = CI_LD, bootsrap_LDs = LD))
     }
 
     ## now we need to obtain y = X'beta on a fine grid for all different
@@ -271,33 +323,47 @@ confint.LD <- function(object, level = 0.95, lethal.dose = c(50, 10),
     ## LDXX(group1) - LDXX(group2)
     X1 <- predict(object$model, newdata = newdata1, type = "lpmatrix")
     pred1 <- responsefct(tcrossprod(X1, rbeta))
-    LD1 <- compute_CIs(pred1, probs, newdata1)
-    CI_LD1 <- LD1$CI_LD
-    LD1 <- LD1$LD
+    CI_LD1 <- compute_CIs(pred1, probs, newdata1, lethal.dose)
+    LD1 <- CI_LD1$bootsrap_LDs
+    CI_LD1 <- CI_LD1$ci
+
+    ## merge LD1.pe with CI
+    CI <- vector("list", 3)
+    CI[[1]] <- append.CI(LD1.pe, CI_LD1)
 
     if (!is.null(newdata2)) {
         X2 <- predict(object$model, newdata = newdata2, type = "lpmatrix")
         pred2 <- responsefct(tcrossprod(X2, rbeta))
-        LD2 <- compute_CIs(pred2, probs, newdata2)
-        CI_LD2 <- LD2$CI_LD
-        LD2 <- LD2$LD
+        CI_LD2 <- compute_CIs(pred2, probs, newdata2, lethal.dose)
+        LD2 <- CI_LD2$bootsrap_LDs
+        CI_LD2 <- CI_LD2$ci
 
-        if (is.list(LD1)) {
-            LD_diff <- lapply(1:length(LD1), function(i)
-                              LD1[[i]][, 1] - LD2[[i]][, 1])
-            CI_Diff <- sapply(LD_diff, function(x)
-                              quantile(x, probs = probs))
-            colnames(CI_Diff) <- colnames(CI_LD2)
+        ## merge LD2.pe with CI
+        CI[[2]] <- append.CI(LD2.pe, CI_LD2)
+
+        LD_diff <- ld.diff(LD1, LD2)
+
+        if (is.list(CI_LD1)) {
+            CI_Diff <- lapply(LD_diff, function(x) {
+                            mat <- matrix(quantile(x, probs = probs),
+                                          nrow = 1)
+                            colnames(mat) <- names(quantile(x, probs = probs))
+                            return(mat)
+                        })
+            names(CI_Diff) <- names(CI_LD1)
         } else {
-            CI_Diff <- quantile(LD1[, 1] - LD2[, 1], probs = probs)
+            CI_Diff <- matrix(quantile(LD_diff, probs = probs), nrow = 1)
+            colnames(CI_Diff) <- names(quantile(LD_diff, probs = probs))
         }
-    } else {
-        pred2 <- NA
-        CI_LD2 <- NA
-        LD2 <- NA
+
+        ## merge LD_Diff.pe with CI
+        CI[[3]] <- append.CI(LD_diff.pe, CI_Diff)
+
     }
 
-    return(list(CI_LD1 = CI_LD1, CI_LD2 = CI_LD2, CI_Diff = CI_Diff,
-                pred1 = pred1, pred2 = pred2, LD1 = LD1, LD2 = LD2))
+    CI <- combine.results(CI)
+    attr(CI, "values") <- lethal.dose
+    class(CI) <- "LDconfint"
+    return(CI)
 }
 
