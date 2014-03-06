@@ -16,6 +16,7 @@ get_tval <- function(object, alpha = 0.05) {
 ## values
 
 make_newdata <- function(object, group = NULL) {
+
     if (!is.null(group) && length(group) != 1)
         stop("group must be an integer or a character string")
 
@@ -35,6 +36,8 @@ make_newdata <- function(object, group = NULL) {
 
     ## set grid for dose
     dose <- seq(min(dose), max(dose), by = 1)
+    if (length(dose) < 50)
+        dose <- seq(min(dose), max(dose), length.out = 150)
 
     ## remove response and dose from data
     newdata[, terms$outcome] <- NULL
@@ -58,3 +61,49 @@ make_newdata <- function(object, group = NULL) {
     newdata[, as.character(variables$dose)] <- dose
     return(newdata)
 }
+
+## compute differences between groups
+ld.diff <- function(LD1, LD2) {
+    if (is.list(LD1)) {
+        RET <- lapply(1:length(LD1), function(i)
+                      LD1[[i]][, 1, drop = FALSE] -
+                      LD2[[i]][, 1, drop = FALSE])
+        names(RET) <- names(LD1)
+    } else {
+        RET <- LD1[, 1, drop = FALSE] - LD2[, 1, drop = FALSE]
+    }
+    return(RET)
+}
+
+append.CI <- function(x, ci) {
+    if (is.list(x)) {
+        RET <- lapply(1:length(x), function(i)
+                      cbind(x[[i]][, 1, drop = FALSE], ci[[i]]))
+        names(RET) <- names(x)
+    } else {
+        RET <- cbind(x[, 1, drop = FALSE], ci)
+    }
+    return(RET)
+}
+
+combine.results <- function(CI) {
+    if (is.null(CI[[2]]) && is.null(CI[[3]]))
+        return(CI[[1]])
+
+    if (is.list(CI[[1]])) {
+        nms <- names(CI[[1]])
+        CI <- lapply(1:length(CI[[1]]), function(i)
+                     rbind(CI[[1]][[i]], CI[[2]][[i]], CI[[3]][[i]]))
+        CI <- lapply(CI, function(mat) {
+            rownames(mat)[3] <- paste0(rownames(mat)[1], " - ",
+                                       rownames(mat)[2])
+            return(mat)})
+        names(CI) <- nms
+    } else {
+        CI <- rbind(CI[[1]], CI[[2]], CI[[3]])
+        rownames(CI)[3] <- paste0(rownames(CI)[1], " - ",
+                                   rownames(CI)[2])
+    }
+    return(CI)
+}
+

@@ -5,11 +5,11 @@
 print.LD <- function(x, ...) {
     cat("\n\tFitted model:\n")
     print(x$model, ...)
-    cat("\n\n\tLethal dose(s):\n")
+    cat("\n\n")
     print(LD(x))
 }
 
-print.LDmatrix <- function(x, ...) {
+print_LDvals <- function(x, ...) {
     if (length(attr(x, "values")) == 1) {
         cat("LD", attr(x, "values"), "\n", sep = "")
         class(x) <- "matrix"
@@ -25,11 +25,25 @@ print.LDmatrix <- function(x, ...) {
     }
 }
 
+print.LDmatrix <- function(x, ...) {
+    cat("\tLethal dose(s):\n")
+    print_LDvals(x, ...)
+}
+
+print.LDconfint <- function(x, ...) {
+    cat("\tLethal dose(s) with confidence intervals:\n")
+    print_LDvals(x)
+}
+
 summary.LD <- function(object, ...) {
     cat("\n\tFitted model:\n")
     print(summary(object$model, ...))
-    cat("\n\n\tLethal dose(s):\n")
+    cat("\n\n")
     print(LD(object))
+}
+
+coef.LD <- function(object, ...) {
+    coef(object$model, ...)
 }
 
 anova.LD <- function(object, ...) {

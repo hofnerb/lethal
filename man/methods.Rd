@@ -1,6 +1,7 @@
 \name{methods}
 \alias{predict.LD}
 \alias{print.LD}
+\alias{print.LDconfint}
 \alias{summary.LD}
 \alias{anova.LD}
 
@@ -24,6 +25,9 @@
 \method{summary}{LD}(object, ...)
 ## anova function
 \method{anova}{LD}(object, ...)
+
+## print function for confidence intervals
+\method{print}{LDconfint}(x, ...)
 
 ## get dose values from model
 get_x(object, ...)

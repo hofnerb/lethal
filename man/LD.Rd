@@ -1,11 +1,11 @@
 \name{LD}
 \alias{LD}
-\alias{LD.default}
+\alias{LD.formula}
 \alias{LD.LD}
 \alias{confint}
 \alias{confint.LD}
 \alias{lethal.dose}
-\alias{lethal.dose.default}
+\alias{lethal.dose.formula}
 \alias{lethal.dose.LD}
 
 \title{
@@ -17,21 +17,21 @@
   approaches
 }
 \usage{
-\method{LD}{default}(formula, groups = NULL, experiment = NULL,
+\method{LD}{formula}(formula, groups = NULL, experiment = NULL,
    lethal.dose = c(50, 10),
    dose_trafo = c("sqrt", "log", "none"),
    data, family = negbin(theta = c(0.01, 1000)), ...)
 
-\method{LD}{LD}(object, lethal.dose = c(50, 10), group = NULL, ...)
+\method{LD}{LD}(object, lethal.dose = NULL, group = NULL, ...)
 
-\method{confint}{LD}(object, level = 0.95, lethal.dose = c(50, 10),
+\method{confint}{LD}(object, level = 0.95, lethal.dose = NULL,
        outcome = "value", dose = "time", B1 = 20, B2 = 100,
        newdata1 = NULL, newdata2 = NULL,
        myapply = mclapply, ...)
 
 ### just wrappers to LD functions as defined above
 ### (i.e., with same arguments)
-\method{lethal.dose}{default}(...)
+\method{lethal.dose}{formula}(...)
 \method{lethal.dose}{LD}(...)
 }
 
@@ -54,7 +54,8 @@
   }
   \item{lethal.dose}{
     vector of LDXX values. Per default, \code{c(50, 10)} for LD50 and
-    LD10.
+    LD10. If no value is specified in functions for class \code{"LD"},
+    the LD values of the fitted \code{"LD"} object are used.
   }
   \item{dose_trafo}{
     define a character string for the transformation that is used to
@@ -110,7 +111,7 @@
     argument \code{mc.cores} to specifiy the number of processes to use.
   }
   \item{\dots}{
-    %%     ~~Describe \code{\dots} here~~
+    further arguments.
   }
 }
 \details{
