@@ -57,8 +57,8 @@ make_newdata <- function(object, group = NULL) {
         }
     }
     newdata <- unique(newdata)
-    newdata <- newdata[rep(1:nrow(newdata), each = length(dose)),]
-    newdata[, as.character(variables$dose)] <- dose
+    newdata <- newdata[rep(1:nrow(newdata), each = length(dose)), , drop = FALSE]
+    newdata[, variables$dose] <- dose
     return(newdata)
 }
 
