@@ -23,6 +23,11 @@ LD.formula <- function(formula, groups = NULL, experiment = NULL,
     if (length(dose) != 1)
         stop("Specify a formula of the type ", sQuote("outcome ~ dose"))
 
+    if (!all(cc <- complete.cases(data))) {
+        warning("Any cases with missing values are dropped")
+        data <- data[cc, ]
+    }
+
     fm_dose <- dose
     if (dose_trafo != "none") {
         fm_dose <- paste0("I(", dose_trafo, "(", fm_dose, "))")
@@ -53,7 +58,9 @@ LD.formula <- function(formula, groups = NULL, experiment = NULL,
 
     RET <- list(model = model,
                 data = data,
-                trafo = dose_trafo)
+                trafo = dose_trafo,
+                family = family,
+                additional_arguments = list(...))
     RET$variables <- list(outcome = as.character(outcome),
                           dose = as.character(dose),
                           groups = groups,
@@ -103,7 +110,7 @@ LD.LDpred <- function(pred, dose = NULL, lethal.dose = c(50, 10), ...) {
     if (!is.null(colnames(pred)))
         rownames(LD) <- colnames(pred)
     if (length(lethal.dose) > 1) {
-        LD <- lapply(1:length(lethal.dose), function(i) LD)
+        LD <- lapply(1:length(lethal.dose), function(i) return(LD))
         names(LD) <- paste("LD", lethal.dose, sep = "")
     }
 
@@ -170,17 +177,25 @@ predict.LD <- function(object, group = NULL,
     if (is.data.frame(newdata)) {
         pr <- predict(object$model, newdata = newdata, type = type, ...)
         ## average over experiments (if available)
-        if (!is.null(variables$experiment))
+        if (!is.null(variables$experiment)) {
             pr <- tapply(pr, newdata[, variables$dose], mean)
+            newdata <- newdata[, !(names(newdata) %in% variables$experiment)]
+            newdata <- unique(newdata)
+        }
         pr <- matrix(pr, ncol = 1)
         if (!is.null(group))
             colnames(pr) <- levels(object$data[, variables$groups])[group]
     } else {
         pr <- sapply(newdata, predict, object = object$model, type = type, ...)
         ## average over experiments (if available)
-        if (!is.null(variables$experiment))
+        if (!is.null(variables$experiment)) {
             pr <- sapply(1:g, function(i)
                          tapply(pr[, i], newdata[[i]][, variables$dose], mean))
+            newdata <- lapply(newdata, function(ND) {
+                              ND <- ND[, !(names(ND) %in% variables$experiment)]
+                              unique(ND)
+                          })
+        }
         colnames(pr) <- levels(object$data[, variables$groups])
     }
 
@@ -188,6 +203,7 @@ predict.LD <- function(object, group = NULL,
 
     RET <- pr
     attr(RET, "newdata") <- newdata
+    attr(RET, "variables") <- variables
     class(RET) <- "LDpred"
     return(RET)
 }
@@ -255,9 +271,9 @@ confint.LD <- function(object, level = 0.95, lethal.dose = NULL,
         rbeta <- rbind(mvrnorm(n = B2, mu = coef(object),
                                Sigma = vcov(object$model)))
     else
-        rbeta <- coef(object$model)
+        rbeta <- coef(object)
 
-    refit_model <- function(counter, object, data, fm) {
+    refit_model <- function(counter, model, data, fm) {
         ## Outer parametric bootstrap (draw new observations from fitted model):
         ## - We assume that the model holds, i.e., the data follows a negative
         ##   binomial distribution and the coefficients are consistent.
@@ -265,8 +281,8 @@ confint.LD <- function(object, level = 0.95, lethal.dose = NULL,
         ##   conditional means as fitted bevor.
 
         ## <FIXME>: Add alternative sample functions for different families
-        res <- rnegbin(rep(1, length(fitted(object))), mu = fitted(object),
-                       theta = object$family$getTheta())
+        res <- rnegbin(rep(1, length(fitted(model))), mu = fitted(model),
+                       theta = model$family$getTheta())
         ## make shure that new outcome is really a count variable > 0
         y <- round(res)
         y[y < 0] <- 0
@@ -278,11 +294,17 @@ confint.LD <- function(object, level = 0.95, lethal.dose = NULL,
 
         ## estimate smoothing parameters and overdispersion parameter theta from
         ## simulated data
-        mod.BS <- gam(fm, data = data.BS, family = negbin(theta = c(0.5, 10)))
+        arguments <- list(formula = fm, data = data.BS, family = object$family)
+        if (!is.null(object$additional_arguments))
+            arguments <- c(arguments, object$additional_arguments)
+
+        mod.BS <- do.call("gam", arguments)
         ## now estimate coefficients from original data but with the above
         ## smoothing parameters
-        mod <- gam(fm, data = data, sp = mod.BS$sp,
-                   family = negbin(theta = mod.BS$family$getTheta()))
+        arguments$data <- data
+        arguments$sp <- mod.BS$sp
+        arguments$family <- negbin(theta = mod.BS$family$getTheta())
+        mod <- do.call("gam", arguments)
 
         ## Inner parametric bootstrap for model on new data
         ## (draw coefficients from the multivariate normal distribution they are
@@ -294,7 +316,7 @@ confint.LD <- function(object, level = 0.95, lethal.dose = NULL,
     }
     ## use B1 - 1 loops as we already used the original model
     if (B1 > 1) {
-        res <- myapply(1:(B1 - 1), refit_model, object = object$model,
+        res <- myapply(1:(B1 - 1), refit_model, model = object$model,
                        data = data, fm = fm, ...)
         rbeta <- rbind(rbeta, do.call(rbind, res))
     }
@@ -302,6 +324,25 @@ confint.LD <- function(object, level = 0.95, lethal.dose = NULL,
     compute_CIs <- function(pred, probs, newdata, lethal.dose) {
 
         LD <- LD(pred, dose = newdata[, dose], lethal.dose = lethal.dose)
+        if (any(sapply(LD, function(x) any(is.na(x))))) {
+            if (is.matrix(LD)) {
+                NAs <- sum(is.na(LD[,1]))
+                if (NAs > probs[1] * nrow(LD))
+                    warning("Upper limit of confidence interval might be to small")
+                LD[is.na(LD[, 1]), 1] <- max(newdata[, dose])
+            } else {
+                NAs <- sapply(LD, function(x) sum(is.na(x[,1])))
+                if (any(NAs > probs[1] * nrow(LD[[1]])))
+                    warning("Upper limit of confidence interval might be to small")
+                LD <- lapply(LD, function(x) {
+                    x[is.na(x[, 1]), 1] <- max(newdata[, dose])
+                    return(x)
+                })
+
+
+            }
+
+        }
         if (is.list(LD)) {
             CI_LD <- lapply(LD, function(x) {
                             mat <- matrix(quantile(x[,1], probs = probs),

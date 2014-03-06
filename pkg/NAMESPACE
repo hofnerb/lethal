@@ -5,9 +5,10 @@ import(parallel)
 import(MASS)
 import(mgcv)
 
-export(LD, lethal.dose,
-       get_x,
-       confint)
+export(LD, LD.formula, LD.LD,
+       lethal.dose, lethal.dose.formula, lethal.dose.LD,
+       confint, confint.LD,
+       get_x)
 
 S3method(lethal.dose, matrix)
 S3method(LD, matrix)
@@ -26,3 +27,4 @@ S3method(predict, LD)
 S3method(confint, LD)
 S3method(lethal.dose, LD)
 S3method(get_x, default)
+S3method(get_x, LDpred)

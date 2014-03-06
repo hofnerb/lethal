@@ -56,6 +56,9 @@ get_x <- function(object, ...)
 get_x.default <- function(object, ...)
     1:length(object)
 
-## <FIXME>
-#get_x.LDpred <- function(object, ...)
-#    #object$newdata[, DOSE]
+get_x.LDpred <- function(object, ...) {
+    newdata <- attr(object, "newdata")
+    if (!is.data.frame(newdata))
+        newdata <- newdata[[1]]
+    newdata[, attr(object, "variables")$dose]
+}
