@@ -62,3 +62,146 @@ get_x.LDpred <- function(object, ...) {
         newdata <- newdata[[1]]
     newdata[, attr(object, "variables")$dose]
 }
+
+
+
+################################################################################
+
+plot.LDconfint <- function(x, xlab = NULL,
+                           upper_log = "y", upper_ylab = "total cell count",
+                           col = c("black", "red"), lty = NULL,
+                           legend = "topright", max.shift = 0.1,
+                           ...) {
+
+    LDmod <- attr(x, "model")
+
+    outcome <- LDmod$variables$outcome
+    dose <- LDmod$variables$dose
+    groups <- LDmod$variables$groups
+    data <- LDmod$data
+
+    ## get LD values
+    lds <- LD(LDmod)
+    n.lds <- length(attr(lds, "values"))
+
+    layout(matrix(c(1, 2), ncol = 1), heights = c(4, 1))
+    plot(LDmod, xlab = xlab, log = upper_log, ylab = upper_ylab,
+         col = col, lty = lty, legend = legend, ...)
+
+    op <- par(mar = c(4, 9.3, 2, 0.1), las  = 1)
+
+    ny <- ifelse(n.lds > 1, nrow(x[[1]]), nrow(x))
+
+    plot(1:ny,
+         xlim = range(x),
+         ylim = c(0.75, ny + 0.25),
+         type = "n", xlab = xlab, ylab = "", yaxt = "n",
+         main = "95 % confidence intervals for lethal dose(s)")
+
+    if (n.lds > 1) {
+        inc <- seq(-max.shift, max.shift, length = n.lds)
+        for (i in 1:n.lds) {
+            points(c(x[[i]][, 1]), (ny:1) + inc[i], pch = 20)
+            for (j in 1:ny)
+                lines(x[[i]][j, -1], rep(ny - j + 1, 2) + inc[i])
+        }
+    } else {
+        points(c(x[, 1]), ny:1, pch = 20)
+        for (j in 1:ny)
+            lines(x[j, -1], rep(ny - j + 1, 2))
+    }
+
+    abline(v = 0, lty = "dashed")
+    ## labels  y-axis
+    if (n.lds > 1) {
+        txt <- rownames(x[[1]])
+    } else {
+        txt <- rownames(x)
+    }
+    prefix <- ifelse(!is.null(groups), paste0(groups, ": "), "")
+    axis(2, at = ny:1, labels = paste0(prefix, txt))
+    par(op)
+}
+
+
+draw_lds <- function(object, col, lty, group = NULL) {
+    if (is.null(group))
+        group <- 1
+
+    if (!is.matrix(object)) {
+        for (i in 1:length(attr(object, "values"))) {
+            lines(rep(object[[i]][group, 1], 2),
+                  c(1e-10, object[[i]][group, 2]),
+                  col = col, lty = lty[i])
+        }
+    } else {
+        lines(rep(object[group, 1], 2), c(1e-10, object[group, 2]),
+              col = col, lty = lty[1])
+    }
+
+}
+
+plot.LD <- function(x, xlab = NULL,
+                    log = "y", ylab = "total cell count",
+                    col = c("black", "red"), lty = NULL,
+                    legend = "topright", ...) {
+
+    outcome <- x$variables$outcome
+    dose <- x$variables$dose
+    groups <- x$variables$groups
+    data <- x$data
+
+    ## get LD values
+    lds <- LD(x)
+    n.lds <- length(attr(lds, "values"))
+
+    if (is.null(xlab))
+        xlab <- dose
+
+    if (is.null(lty)) {
+        lty <- 1:n.lds
+    } else {
+        if (length(lty) == 1)
+            lty <- rep(lty, n.lds)
+    }
+
+    if (length(lty) != n.lds)
+        stop("lty must be a vector of length 1 or",
+             " equal to the number of LD values")
+
+    if (!is.null(groups)) {
+        cols <- col[data[, groups]]
+    } else {
+        cols <- col[1]
+    }
+
+    op <- par(mar = c(4, 9.3, 0.1, 0.1), las  = 1)
+    fm <- as.formula(paste(outcome, dose, sep = "~"))
+    plot(fm, data = data, pch = 20,
+         xlab = xlab, ylab = "", log = log,
+         col = cols)
+    mtext(ylab, side = 2, line = 5, las = 0)
+
+    if (!is.null(groups)) {
+        p1 <- predict(x, group = 1)
+        p2 <- predict(x, group = 2)
+        lines(get_x(p1), p1, lwd = 2, col = col[1])
+        lines(get_x(p2), p2, lwd = 2, col = col[2])
+        draw_lds(lds, col = col[1], lty = lty, group = 1)
+        draw_lds(lds, col = col[2], lty = lty, group = 2)
+    } else {
+        p1 <- predict(x)
+        lines(get_x(p1), p1, lwd = 2, col = col[1])
+        draw_lds(lds, col = col[1], lty = lty)
+    }
+
+    if (legend != "none") {
+        txt <- paste(rep(c("LD50", "LD10"), 2), ", Strain: ",
+                     rep(levels(data$strain), each = 2), sep = "")
+        legend(legend, legend = txt, bty = "n",
+               title = "Lethal dose(s)",
+               col = rep(col, each = n.lds),
+               lty = rep(lty, ifelse(is.null(groups), 1, 2)))
+    }
+    par(op)
+}

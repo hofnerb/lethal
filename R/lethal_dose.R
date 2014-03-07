@@ -73,7 +73,7 @@ LD.formula <- function(formula, groups = NULL, experiment = NULL,
 LD.LD <- function(object, lethal.dose = NULL, group = NULL, ...) {
     if (is.null(lethal.dose) ||
         (!is.null(attr(object$lethal.dose, "values")) &&
-         attr(object$lethal.dose, "values") == lethal.dose)) {
+         all(attr(object$lethal.dose, "values") == lethal.dose))) {
 
         RET <- object$lethal.dose
         if (!is.null(group)) {
@@ -404,6 +404,7 @@ confint.LD <- function(object, level = 0.95, lethal.dose = NULL,
 
     CI <- combine.results(CI)
     attr(CI, "values") <- lethal.dose
+    attr(CI, "model") <- object
     class(CI) <- "LDconfint"
     return(CI)
 }
