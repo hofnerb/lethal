@@ -217,14 +217,15 @@ predict.LD <- function(object, group = NULL,
 confint <- function(object, level, ...)
     UseMethod("confint")
 
-confint.LD <- function(object, level = 0.95, lethal.dose = NULL,
-                       outcome = "value", dose = "time", B1 = 20, B2 = 100,
+confint.LD <- function(object, level = 0.95, lethal.dose = NULL, B1 = 20, B2 = 100,
                        newdata1 = NULL, newdata2 = NULL,
                        myapply = mclapply, ...) {
 
     data <- object$data
     fm <- object$model$formula
     responsefct <- object$model$family$linkinv
+    dose <- object$variables$dose
+    outcome <- object$variables$outcome
 
     if (is.null(lethal.dose))
         lethal.dose <- attr(object$lethal.dose, "values")
