@@ -80,11 +80,15 @@ plot.LDconfint <- function(x, xlab = NULL,
     groups <- LDmod$variables$groups
     data <- LDmod$data
 
+    if (is.null(xlab))
+        xlab <- dose
+
     ## get LD values
     lds <- LD(LDmod)
     n.lds <- length(attr(lds, "values"))
 
-    layout(matrix(c(1, 2), ncol = 1), heights = c(4, 1))
+    layout(matrix(c(1, 2), ncol = 1), heights = c(2, 1))
+
     plot(LDmod, xlab = xlab, log = upper_log, ylab = upper_ylab,
          col = col, lty = lty, legend = legend, ...)
 
@@ -196,12 +200,21 @@ plot.LD <- function(x, xlab = NULL,
     }
 
     if (legend != "none") {
-        txt <- paste(rep(c("LD50", "LD10"), 2), ", Strain: ",
-                     rep(levels(data$strain), each = 2), sep = "")
+        if (!is.null(groups)) {
+            txt <- paste0(", ", groups, ": ",
+                          rep(levels(data[, groups]), each = n.lds))
+        } else {
+            txt <- ""
+        }
+
+        txt <- paste0(rep(paste0("LD", attr(lds, "values")),
+                          ifelse(is.null(groups), 1, 2)),
+                      txt)
         legend(legend, legend = txt, bty = "n",
                title = "Lethal dose(s)",
                col = rep(col, each = n.lds),
                lty = rep(lty, ifelse(is.null(groups), 1, 2)))
     }
     par(op)
+    #layout(matrix(c(1, 1), ncol = 1))
 }
