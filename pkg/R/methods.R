@@ -100,7 +100,7 @@ plot.LDconfint <- function(x, xlab = NULL,
          xlim = range(x),
          ylim = c(0.75, ny + 0.25),
          type = "n", xlab = xlab, ylab = "", yaxt = "n",
-         main = "95 % confidence intervals for lethal dose(s)")
+         main = "95 % confidence intervals for lethal dose(s)", ...)
 
     if (n.lds > 1) {
         inc <- seq(-max.shift, max.shift, length = n.lds)
@@ -183,7 +183,7 @@ plot.LD <- function(x, xlab = NULL,
     fm <- as.formula(paste(outcome, dose, sep = "~"))
     plot(fm, data = data, pch = 20,
          xlab = xlab, ylab = "", log = log,
-         col = cols)
+         col = cols, ...)
     mtext(ylab, side = 2, line = 5, las = 0)
 
     if (!is.null(groups)) {
