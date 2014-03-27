@@ -71,6 +71,7 @@ plot.LDconfint <- function(x, xlab = NULL,
                            upper_log = "y", upper_ylab = "total cell count",
                            col = c("black", "red"), lty = NULL,
                            legend = "topright", max.shift = 0.1,
+                           mar  = c(4, 9.3, 2, 0.1),
                            ...) {
 
     LDmod <- attr(x, "model")
@@ -90,17 +91,23 @@ plot.LDconfint <- function(x, xlab = NULL,
     layout(matrix(c(1, 2), ncol = 1), heights = c(2, 1))
 
     plot(LDmod, xlab = xlab, log = upper_log, ylab = upper_ylab,
-         col = col, lty = lty, legend = legend, ...)
+         col = col, lty = lty, legend = legend, mar = mar, ...)
 
-    op <- par(mar = c(4, 9.3, 2, 0.1), las  = 1)
+    op <- par(mar = mar, las  = 1)
 
     ny <- ifelse(n.lds > 1, nrow(x[[1]]), nrow(x))
+
+    if (n.lds > 1) {
+        main <- "95 % confidence intervals for lethal doses"
+    } else {
+        main <- "95 % confidence intervals for lethal dose"
+    }
 
     plot(1:ny,
          xlim = range(x),
          ylim = c(0.75, ny + 0.25),
          type = "n", xlab = xlab, ylab = "", yaxt = "n",
-         main = "95 % confidence intervals for lethal dose(s)", ...)
+         main = main, ...)
 
     if (n.lds > 1) {
         inc <- seq(-max.shift, max.shift, length = n.lds)
@@ -148,7 +155,7 @@ draw_lds <- function(object, col, lty, group = NULL) {
 plot.LD <- function(x, xlab = NULL,
                     log = "y", ylab = "total cell count",
                     col = c("black", "red"), lty = NULL,
-                    legend = "topright", ...) {
+                    legend = "topright", mar  = c(4, 9.3, 2, 0.1), ...) {
 
     outcome <- x$variables$outcome
     dose <- x$variables$dose
@@ -179,7 +186,7 @@ plot.LD <- function(x, xlab = NULL,
         cols <- col[1]
     }
 
-    op <- par(mar = c(4, 9.3, 0.1, 0.1), las  = 1)
+    op <- par(mar = mar, las  = 1)
     fm <- as.formula(paste(outcome, dose, sep = "~"))
     plot(fm, data = data, pch = 20,
          xlab = xlab, ylab = "", log = log,

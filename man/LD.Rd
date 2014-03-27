@@ -132,7 +132,13 @@
   \code{\link{predict.LD}}, \code{\link{summary.LD}}, etc.
 }
 \examples{
-## currently not available
+## model survival fractions for UV radiation experiment
+data("geoderm.uv")
+mod.uv <- LD(value ~ time, groups = "strain", experiment = "replicate",
+             dose_trafo = "sqrt", data = geoderm.uv,
+             family = negbin(theta = c(0.5, 10)))
+
+## for more examples see ?summary.LD
 }
 
 \keyword{models}
