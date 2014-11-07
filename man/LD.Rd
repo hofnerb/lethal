@@ -25,7 +25,7 @@
 \method{LD}{LD}(object, lethal.dose = NULL, group = NULL, ...)
 
 \method{confint}{LD}(object, level = 0.95, lethal.dose = NULL,
-       B1 = 20, B2 = 100, newdata1 = NULL, newdata2 = NULL,
+       B1 = 20, B2 = 100, newdata = NULL,
        myapply = mclapply, ...)
 
 ### just wrappers to LD functions as defined above
@@ -84,13 +84,9 @@
   \item{level}{
     coverage probability of confidence interval
   }
-  \item{newdata1}{
-    (optional) data with fine grid for dose for strain 1. Only for
-    expert users. Usually this data set is built internally.
-  }
-  \item{newdata2}{
-    (optional) data with fine grid for dose for strain 2. Only for
-    expert users. Usually this data set is built internally.
+  \item{newdata}{
+    (optional) list of data frames, one per strain, with a fine grid for dose.
+    Only for expert users. Usually this data set is built internally.
   }
   \item{B1}{
     number of new sampled data sets.
