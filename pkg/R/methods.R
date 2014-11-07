@@ -181,6 +181,11 @@ plot.LD <- function(x, xlab = NULL,
              " equal to the number of LD values")
 
     if (!is.null(groups)) {
+        nlvl <- nlevels(data[, groups])
+        if (length(col) < nlvl) {
+            col <- rep(col, length= nlvl)
+            warning("To few colors specified; ", sQuote("col"), " is recycled")
+        }
         cols <- col[data[, groups]]
     } else {
         cols <- col[1]
@@ -194,12 +199,11 @@ plot.LD <- function(x, xlab = NULL,
     mtext(ylab, side = 2, line = 5, las = 0)
 
     if (!is.null(groups)) {
-        p1 <- predict(x, group = 1)
-        p2 <- predict(x, group = 2)
-        lines(get_x(p1), p1, lwd = 2, col = col[1])
-        lines(get_x(p2), p2, lwd = 2, col = col[2])
-        draw_lds(lds, col = col[1], lty = lty, group = 1)
-        draw_lds(lds, col = col[2], lty = lty, group = 2)
+        for (i in 1:nlvl) {
+            p <- predict(x, group = i)
+            lines(get_x(p), p, lwd = 2, col = col[i])
+            draw_lds(lds, col = col[i], lty = lty, group = i)
+        }
     } else {
         p1 <- predict(x)
         lines(get_x(p1), p1, lwd = 2, col = col[1])
