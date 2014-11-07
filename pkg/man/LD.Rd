@@ -44,7 +44,7 @@
   \item{groups}{
     (optional) define the name of the grouping factor (if available in
     the data set). This could be for example the species, the strain, or
-    any other factor (with two groups).
+    any other factor (with two or more groups).
   }
   \item{experiment}{
     (optional) define the name of the experiment variable if multiple
@@ -66,7 +66,7 @@
   \item{data}{
     data set with an outcome variable (i.e., number of surviving
     cells/bacteria/...), a dose variable and optionally a grouping
-    variable (with two groups) that is used to comparte the
+    variable (with two or more groups) that is used to comparte the
     groups. Further more, the data set can optionally contain an
     indicator for the experiment, which is used to model possible
     experiment effects.
