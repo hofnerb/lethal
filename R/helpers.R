@@ -88,26 +88,23 @@ append.CI <- function(x, ci) {
 
 combine.results <- function(CI, CI_Diff) {
     CI <- c(CI, CI_Diff)
+    groupnms <- names(CI)
     if (is.list(CI[[1]])) {
         nms <- names(CI[[1]])
         ## rbind(CI[[1]][[i]], CI[[2]][[i]], ...) for all LD values (i)
         CI <- lapply(1:length(CI[[1]]), function(i)
                      do.call("rbind", lapply(CI, function(x) x[[i]])))
-
-        ## <FIXME> Add rownames
-        #CI <- lapply(CI, function(mat) {
-        #    rownames(mat)[3] <- paste0(rownames(mat)[1], " - ",
-        #                               rownames(mat)[2])
-        #    return(mat)})
-
+        ## add names of groups
+        CI <- lapply(CI, function(mat) {
+            rownames(mat) <- groupnms
+            return(mat)})
+        ## add names of LD values
         names(CI) <- nms
     } else {
         ## rbind(CI[[1]], CI[[2]], ...)
         CI <- do.call("rbind", CI)
-
-        ## <FIXME> Add rownames
-        #rownames(CI)[3] <- paste0(rownames(CI)[1], " - ",
-        #                          rownames(CI)[2])
+        ## add names of groups
+        rownames(CI) <- groupnms
     }
     return(CI)
 }

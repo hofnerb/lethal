@@ -226,6 +226,8 @@ confint.LD <- function(object, level = 0.95, lethal.dose = NULL, B1 = 20, B2 = 1
     dose <- object$variables$dose
     outcome <- object$variables$outcome
     groups <- object$variables$groups
+    if(!is.null(groups))
+        groupnms <- levels(data[, groups])
 
     if (is.null(lethal.dose))
         lethal.dose <- attr(object$lethal.dose, "values")
@@ -253,7 +255,7 @@ confint.LD <- function(object, level = 0.95, lethal.dose = NULL, B1 = 20, B2 = 1
                 if (i != j) {
                     k <- k + 1
                     LD_diff.pe[[k]] <-  ld.diff(LD.pe[[i]], LD.pe[[j]])
-                    nms[k] <- paste(i, j, sep = " - ")
+                    nms[k] <- paste(groupnms[i], groupnms[j], sep = " - ")
                 }
             }
         }
@@ -338,12 +340,12 @@ confint.LD <- function(object, level = 0.95, lethal.dose = NULL, B1 = 20, B2 = 1
             if (is.matrix(LD)) {
                 NAs <- sum(is.na(LD[,1]))
                 if (NAs > probs[1] * nrow(LD))
-                    warning("Upper limit of confidence interval might be to small")
+                    warning("NAs were produced; Upper limit of confidence interval might be to small")
                 LD[is.na(LD[, 1]), 1] <- max(newdata[, dose])
             } else {
                 NAs <- sapply(LD, function(x) sum(is.na(x[,1])))
                 if (any(NAs > probs[1] * nrow(LD[[1]])))
-                    warning("Upper limit of confidence interval might be to small")
+                    warning("NAs were produced; Upper limit of confidence interval might be to small")
                 LD <- lapply(LD, function(x) {
                     x[is.na(x[, 1]), 1] <- max(newdata[, dose])
                     return(x)
@@ -379,6 +381,7 @@ confint.LD <- function(object, level = 0.95, lethal.dose = NULL, B1 = 20, B2 = 1
         CI_LD <- lapply(CI_LD, function(x) x$ci)
         ## create results: merge LD.pe with CI
         CI <- lapply(1:nlvl, function(i) append.CI(LD.pe[[i]], CI_LD[[i]]))
+        names(CI) <- groupnms
 
         ## compute CIs for all pairwise differences
         LD_diff <- CI_Diff<- list()
@@ -404,10 +407,10 @@ confint.LD <- function(object, level = 0.95, lethal.dose = NULL, B1 = 20, B2 = 1
                 }
             }
         }
-        names(CI_Diff) <- nms
         ## create results: merge LD.pe with CI
         CI_Diff <- lapply(1:length(CI_Diff), function(i)
             append.CI(LD_diff.pe[[i]], CI_Diff[[i]]))
+        names(CI_Diff) <- nms
         ## combine results
         CI <- combine.results(CI, CI_Diff)
     } else {
