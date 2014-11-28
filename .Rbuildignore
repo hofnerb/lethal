@@ -1,0 +1,4 @@
+^\..*
+^README.md$
+tests/.*\.Rout\.save$
+^\.travis\.yml$
