@@ -26,7 +26,7 @@ Afer installation (see above) we first need to load the package:
 
     library("lethal")
 
-To illustrate the usage of the package `lethal` we will use a data set on the UV tolerance of _Geodermatophilus_ ([Montero-Calasanz, Hofner _et al._, 2014](https://github.com/hofnerb/lethal/blob/master/README.md#references):
+To illustrate the usage of the package `lethal` we will use a data set on the UV tolerance of _Geodermatophilus_ ([Montero-Calasanz, Hofner _et al._, 2014](https://github.com/hofnerb/lethal/blob/master/README.md#references)):
 
     data(geoderm.uv, package = "lethal")
     summary(geoderm.uv)
