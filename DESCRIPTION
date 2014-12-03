@@ -1,12 +1,17 @@
 Package: lethal
 Type: Package
-Title: Compute lethal doses (LD) with confidence intervals
+Title: Compute Lethal Doses (LD) with Confidence Intervals
 Version: 0.6
 Date: 2014-03-27
 Author: Benjamin Hofner
 Maintainer: Benjamin Hofner <benjamin.hofner@fau.de>
 Description: Compute lethal doses for count data based on generalized additive models (GAMs)
-	together with parametric bootstrap confidence intervals for the lethal dose
+	together with parametric bootstrap confidence intervals for the lethal dose. The package
+ 	is designed for experiments with counts as outcome, which need a separate preparation
+	for each measurment. Examples for such experiments are survival experiments where the
+	survival is measured as the number of colony forming units (c.f.u.). In this case,
+	one cannot measure one prepartation multiple times with various doses but one needs
+	one experiment (with one or more biological replicates) for each dose.
 Depends: methods, stats, parallel, mgcv, MASS
 License: GPL-2 | GPL-3
 LazyLoad: yes
