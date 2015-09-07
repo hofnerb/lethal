@@ -2,3 +2,4 @@
 ^README.md$
 tests/.*\.Rout\.save$
 ^\.travis\.yml$
+^appveyor\.yml$

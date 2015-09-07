@@ -2,6 +2,7 @@ lethal
 ======
 
 [![Build Status](https://travis-ci.org/hofnerb/lethal.svg)](https://travis-ci.org/hofnerb/lethal)
+[![Build status](https://ci.appveyor.com/api/projects/status/uoe5e6o43932a2u8?svg=true)](https://ci.appveyor.com/project/hofnerb/lethal)
 
 `lethal`  computes lethal doses for count data based on generalized additive models (GAMs) together with parametric bootstrap confidence intervals for the lethal dose. `lethal` is designed for experiments with counts as outcome, which need a separate preparation for each measurment. Examples for such experiments are survival experiments where the survival is measured as the number of colony forming units (c.f.u.). In this case, one cannot measure one prepartation multiple times with various doses but one needs one experiment (with one or more biological replicates) for each dose.
 
