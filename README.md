@@ -8,10 +8,6 @@ lethal
 
 ## Installation:
 
-- Current version (from CRAN): 
-
-        install.packages("lethal")
-
 - Latest development version from GitHub:
 
         library("devtools")
