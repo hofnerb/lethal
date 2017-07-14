@@ -51,12 +51,6 @@ get_x(object, ...)
     additional arguments passed to callies.
   }
 }
-\details{
-
-}
-\references{
-  %% ~put references to the literature/web site here ~
-}
 \author{
   Benjamin Hofner
 }

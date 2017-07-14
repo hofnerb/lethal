@@ -1,4 +1,5 @@
 \name{geoderm.uv}
+\encoding{UTF-8}
 \alias{geoderm.uv}
 \docType{data}
 

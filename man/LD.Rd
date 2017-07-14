@@ -106,23 +106,9 @@
 \details{
   Explain the model that is used to derive the lethal doses here...
 }
-\value{
-  %%  ~Describe the value returned
-  %%  If it is a LIST, use
-  %%  \item{comp1 }{Description of 'comp1'}
-  %%  \item{comp2 }{Description of 'comp2'}
-  %% ...
-}
-\references{
-  %% ~put references to the literature/web site here ~
-}
 \author{
   Benjamin Hofner <benjamin.hofner@fau.de>
 }
-\note{
-  %%  ~~further notes~~
-}
-
 \seealso{
   methods for fitted \code{LD} models:
   \code{\link{predict.LD}}, \code{\link{summary.LD}}, etc.
