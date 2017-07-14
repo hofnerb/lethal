@@ -1,8 +1,8 @@
 Package: lethal
 Type: Package
 Title: Compute Lethal Doses (LD) with Confidence Intervals
-Version: 0.6
-Date: 2014-03-27
+Version: 0.6.1
+Date: 2017-07-14
 Author: Benjamin Hofner
 Maintainer: Benjamin Hofner <benjamin.hofner@fau.de>
 Description: Compute lethal doses for count data based on generalized additive models (GAMs)
@@ -16,4 +16,4 @@ Depends: methods, stats, parallel, mgcv, MASS
 License: GPL-2 | GPL-3
 LazyLoad: yes
 LazyData: yes
-URL: http://r-forge.r-project.org/projects/lethal/
+URL: https://github.com/hofnerb/lethal
