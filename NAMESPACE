@@ -1,6 +1,8 @@
 import(methods)
 import(stats)
 import(parallel)
+importFrom("graphics", "abline", "axis", "layout", "lines", "mtext",
+             "par", "plot", "points")
 
 import(MASS)
 import(mgcv)
