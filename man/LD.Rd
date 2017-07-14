@@ -20,7 +20,7 @@
 \method{LD}{formula}(formula, groups = NULL, experiment = NULL,
    lethal.dose = c(50, 10),
    dose_trafo = c("sqrt", "log", "none"),
-   data, family = negbin(theta = c(0.01, 1000)), ...)
+   data, family = nb(), ...)
 
 \method{LD}{LD}(object, lethal.dose = NULL, group = NULL, ...)
 
@@ -131,8 +131,7 @@
 ## model survival fractions for UV radiation experiment
 data("geoderm.uv")
 mod.uv <- LD(value ~ time, groups = "strain", experiment = "replicate",
-             dose_trafo = "sqrt", data = geoderm.uv,
-             family = negbin(theta = c(0.5, 10)))
+             dose_trafo = "sqrt", data = geoderm.uv)
 
 ## for more examples see ?summary.LD
 }

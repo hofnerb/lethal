@@ -7,9 +7,9 @@ LD <- lethal.dose <- function(...)
 LD.formula <- function(formula, groups = NULL, experiment = NULL,
                lethal.dose = c(50, 10),
                dose_trafo = c("sqrt", "log", "none"),
-               data, family = negbin(theta = c(0.01, 1000)), ...) {
+               data, family = nb(), ...) {
 
-    if (!all(grepl("Negative Binomial", family$family)))
+    if (!all(grepl("[N|n]egative [B|b]inomial", family$family)))
         stop("family must currently be negbin")
 
     #if (!is.null(groups) && nlevels(data[, groups]) != 2)
